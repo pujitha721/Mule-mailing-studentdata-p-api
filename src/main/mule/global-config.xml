@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:accelerator-manufacturing="http://www.mulesoft.org/schema/mule/accelerator-manufacturing" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:accelerator-retail="http://www.mulesoft.org/schema/mule/accelerator-retail" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd http://www.mulesoft.org/schema/mule/accelerator-manufacturing http://www.mulesoft.org/schema/mule/accelerator-manufacturing/current/mule-accelerator-manufacturing.xsd">
+    <http:listener-config name="orders-prc-api-httpListenerConfig">
+        <http:listener-connection host="${https.host}" port="${https.port}"/>
+    </http:listener-config>
+    <!-- <apikit:config name="orders-prc-api-config" api="resource::org.mule.examples:rcg-orders-prc-api-spec:2.1.3:raml:zip:rcg-orders-prc-api-spec.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" /> -->
+    <configuration-properties doc:name="mule-env" doc:id="939c271a-0e1d-4c50-a574-2fe4d75481bd" file="config/config-${mule.env}.yaml" />
+    <configuration doc:name="global-error-handler" doc:id="1efb2dad-f2f7-4c6f-8bb2-bb9bffad082a" defaultErrorHandler-ref="error-handler_common" />
+    <!-- <api-gateway:autodiscovery apiId="${api.autodiscoveryID}" doc:name="API 
+		Autodiscovery" doc:id="52c5c5d6-10ad-4944-b076-2d6bba31be3a" ignoreBasePath="true"/> -->
+    <secure-properties:config name="secure-propertiesConfig" doc:name="secure-properties" doc:id="d6828381-b51b-43a2-8783-15c314c3a417" file="config/config-secured-${mule.env}.yaml" key="${mule.key}" />
+    <os:object-store name="orders_lastupdated_store" doc:name="object-store" doc:id="aa7a6b74-7048-4c05-af2f-ebb38330dc5b" maxEntries="${order-lastupdated.maxEntries}" entryTtl="${order-lastupdated.entryTtl}" entryTtlUnit="HOURS" expirationInterval="${order-lastupdated.expirationInterval}" />
+	<configuration-properties doc:name="Configuration properties" doc:id="faf6a6ba-6cf9-46a8-92d2-dfecee9d3056" file="config/config.yaml" />
+	<apikit:config name="mule-mailing-student-data-p-api-config" api="resource::2258d578-6448-497e-903d-07b0b264378e:mule-mailing-student-data-p-api:1.0.0:raml:zip:mule-mailing-student-data-p-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<http:request-config name="HTTP_Request_configuration_email" doc:name="HTTP Request configuration" doc:id="86e1016f-0596-4452-aaf2-5fc6640d8c06" basePath="${request.base}" >
+		<http:request-connection host="${request.host}" port="${request.porte}" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration_neon" doc:name="HTTP Request configuration" doc:id="9da4db8e-05b7-42cf-800c-a85ca557f36e" basePath="${request.base}" >
+		<http:request-connection host="${request.host}" port="${request.portn}" />
+	</http:request-config>
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="ff2c341d-7c6f-48b9-b7c9-f8ccffee9126" >
+		<sftp:connection host="${sftp.host}" port="${sftp.port}" username="${sftp.username}" password="${secure::sftp.password}" />
+	</sftp:config>
+	<http:request-config name="HTTP_Request_configuration_cloud_email" doc:name="HTTP Request configuration" doc:id="daaad953-51ac-44b6-a327-340fa81977a8" basePath="${request1.basepath}" >
+		<http:request-connection host="${request1.hoste}" port="${request1.port}" protocol="${request1.protocol}"/>
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration-neon-cloud" doc:name="HTTP Request configuration" doc:id="ad87e29b-1c56-41da-b963-df458bcef9b9" basePath="${request1.basepath}" >
+		<http:request-connection host="${request1.hostn}" port="${request1.port}" protocol="${request1.protocol}"/>
+	</http:request-config>
+	<api-gateway:autodiscovery apiId="${api.autodiscoveryID}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="611ada53-48b3-42c4-90ac-ad2e41b25419" flowRef="mule-mailing-student-data-p-api-main" />
+
+</mule>

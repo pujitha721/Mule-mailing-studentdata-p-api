@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<sub-flow name="get-mule-mailing-studentdata-p-select-api-impl-sub-flow" doc:id="ef5a3816-4c88-4be7-ac3c-dde83777c6e5" >
+		<logger level="INFO" doc:name="Start" doc:id="2e0cb560-cc98-492b-8c6f-029f51f6855b" message='flow "get-mule-mailing-student-data-p-api-impl-sub-flow" started'/>
+		<ee:transform doc:name="extracting  Rollno" doc:id="36cb44f8-8caf-476a-af30-63dd3ddbd49a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="content"><![CDATA[%dw 2.0
+output application/json
+---
+{
+    query: "SELECT * FROM student_results WHERE RollNo = '" ++ (attributes.uriParams.rollNo default "") ++ "';"
+}
+
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="Request to neon-db-system" doc:id="4dcadc7c-3f60-4a1b-aa6f-a52adcf64935" config-ref="HTTP_Request_configuration-neon-cloud" path="/students/{rollNo}" responseTimeout="${request.response}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	client_secret : "D77004Fc13e2417291bA93e913fe96D5",
+	client_id : "63d4eca79326491d93271c4dd6c89c76"
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+    rollNo: attributes.uriParams.rollNo
+}]]]></http:uri-params>
+			<http:query-params ><![CDATA[#[vars.content]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="response paylaod" doc:id="ffd4ce43-e898-43cd-ae77-f83d9140ca44" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if (isEmpty(payload)) 
+    {
+        status: "fail",
+        message: "No student found for given RollNo."
+    }
+else 
+    {
+        status: "success",
+        student: {
+            RollNo: payload[0].rollno,
+            StudentName: payload[0].studentname,
+            EmailId: payload[0].emailid,
+            University: payload[0].university,
+            College: payload[0].college,
+            BatchCode: payload[0].batchcode,
+            Branch: payload[0].branch,
+            Semester: payload[0].semester,
+            Grade: payload[0].grade,
+            FinalResult: payload[0].finalresult,
+            SentNotification: payload[0].sentnotification
+        }
+    }
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="End" doc:id="e185b31f-4906-457f-bd10-f034661c7e22" message='flow " get-mule-mailing-student-data-p-api-impl-sub-flow" ended'/>
+	</sub-flow>
+</mule>

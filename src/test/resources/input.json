@@ -1,0 +1,15 @@
+[
+  {
+    "rollno": "21ECE1020",
+    "studentname": "John Doe",
+    "emailid": "pujitha.dhoragolla@prowesssoft.com",
+    "university": "XYZ University",
+    "college": "Sunrise Engineering",
+    "batchcode": "2021CSE-A",
+    "branch": "ECE",
+    "semester": "3-1",
+    "grade": "A",
+    "finalresult": "Pass",
+    "sentnotification": "Y"
+  }
+]

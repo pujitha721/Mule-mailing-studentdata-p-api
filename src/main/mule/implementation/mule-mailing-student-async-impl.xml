@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<flow name="mule-mailing-studentdata-p-api-impl-flow" doc:id="32ad284a-18ec-4f04-ba9e-5eadad5b2b54">
+		<sftp:listener doc:name="On New or Updated File" doc:id="4c87fc86-25fe-4c73-b22f-b152f5447b47" config-ref="SFTP_Config" directory="${file.path}">
+			<scheduling-strategy>
+				<cron expression="${file.cron}" />
+			
+</scheduling-strategy>
+		</sftp:listener>
+		<set-variable value="#[attributes.path]" doc:name="Setting fileName name " doc:id="d4dccd3f-423d-4057-983d-240c9dd37b3c" variableName="fileName" />
+		<logger level="INFO" doc:name="file status" doc:id="4601cb2f-8117-415a-95dd-2f3a32287dd5" message="the file fetched successfully #[vars.fileName]" />
+		<ee:transform doc:name="payload" doc:id="cf0896b9-a970-4ad2-8640-d8b1478eca4e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.Sheet1
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="mule-mailing-studentdata-p-api-impl-sub-flow" doc:id="be21859f-1c8e-4399-960a-57fec98e3e29" name="mule-mailing-studentdata-p-api-impl-sub-flow" />
+		<logger level="INFO" doc:name="file status" doc:id="f70c2d38-b11e-46da-87d8-00c641663aee" message="moving  #[vars.fileName] to archive folder" />
+		<ee:transform doc:name="adding timestamp to filename" doc:id="e668db2a-4cab-42c0-8278-2025e80950ce">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output text/plain
+var filePath = (attributes.path default "") as String
+var timestamp = (now() as String {format: "yyyyMMdd_HHmmss"})
+var fileName = (filePath splitBy "/")[-1]
+var newFileName = (fileName replace /.xlsx$/ with "_" ++ timestamp ++ ".xlsx")
+---
+newFileName
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<sftp:move doc:name="Move to archive" doc:id="f4440b20-9ef9-47c2-b0f6-3dcf848f5a1d" config-ref="SFTP_Config" sourcePath="#[vars.fileName]" renameTo="#[payload]" targetPath='#["/archive/"]' />
+		<logger level="INFO" doc:name="file status" doc:id="49386af8-59a3-4313-8f00-a710598ec2ad" message="#[vars.fileName] moved to archive folder "/>
+	
+</flow>
+	<sub-flow name="mule-mailing-studentdata-p-api-impl-sub-flow" doc:id="3f003755-9b55-4b66-b74b-1ed110f45e61" >
+		<logger level="INFO" doc:name="Start" doc:id="b4a3991d-24c8-448a-bf9e-56c59c69cfa9" message='flow "mule-mailing-student-data-p-api-impl-sub-flow" started'/>
+		<foreach doc:name="file data" doc:id="63dd15bd-89c4-4449-9263-a1f00886a6c5" collection="#[payload]">
+			<ee:transform doc:name="validation" doc:id="083b192d-852e-4967-874a-389b9655d975" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var validBranches = p('valid.branches')
+var validSemesters = p('valid.semesters')
+var validGrades = p('valid.grades')
+var validResults = p('valid.results')
+var passGrades = p('valid.gradeResultMapping.passGrades')
+var failGrades = p('valid.gradeResultMapping.failGrades')
+
+fun validate(student) =
+    if (!(validBranches contains student.Branch)) "Invalid Branch"
+    else if (!(validSemesters contains student.Semester)) "Invalid Semester"
+    else if (!(validGrades contains student.Grade)) "Invalid Grade"
+    else if (!(validResults contains student.FinalResult)) "Invalid FinalResult"
+    else if ((passGrades contains student.Grade) and (student.FinalResult != "Pass")) "Grade-Result Mismatch"
+    else if ((failGrades contains student.Grade) and (student.FinalResult != "Fail")) "Grade-Result Mismatch"
+    else "Valid"
+
+---
+{
+  student: payload,
+  validationStatus: validate(payload)
+}
+]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<choice doc:name="validation status?" doc:id="e0d24bea-50e2-4fd4-a8e9-0418b5320aa9">
+				<when expression='#[payload.validationStatus == "Valid"]'>
+					<ee:transform doc:name="appending SentNotification 'Y'" doc:id="f25dd89a-40d5-4d66-a9d6-c4cf8ae60923">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    student: payload.student ++ { SentNotification: "Y" },
+    validationStatus: payload.validationStatus
+}
+]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<set-variable value="#[payload]" doc:name="Setting data Variable" doc:id="3c47678e-c603-4aee-b198-de9fe27f257d" variableName="data" />
+					<parse-template doc:name="Parse Email Template" doc:id="ff4e9799-5469-4932-92ff-f6c157260125" location="templates/studentEmail.html" outputMimeType="text/html" target="emailBody"/>
+					<ee:transform doc:name="Transform Message" doc:id="4b99bf62-4331-4a51-8a22-5a3401237bc0">
+						<ee:message>
+							<ee:set-payload><![CDATA[output text/plain
+---
+vars.emailBody as String]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<logger level="INFO" doc:name="file status" doc:id="89b80a89-374c-40e0-a904-003aae1983da" message=" processing #[vars.fileName] to email system api"/>
+					<flow-ref doc:name="mule-mailing-student-async-email-impl-sub-flow" doc:id="5650135a-110e-406e-9eb0-1e3493a5aafd" name="mule-mailing-student-async-email-impl-sub-flow"/>
+					<logger level="INFO" doc:name="file status" doc:id="eef2bd3c-0959-4feb-8554-167816ed8522" message=" send mail successful and processing #[vars.fileName] to neon-db system api"/>
+					<flow-ref doc:name="mule-mailing-student-async-neon-impl-sub-flow" doc:id="4cab4af5-54c5-4986-9d47-b78e184b342b" name="mule-mailing-student-async-neon-insert-impl-sub-flow"/>
+					<logger level="INFO" doc:name="file status " doc:id="ce1beb1c-e48a-456e-af76-5fa78b1d4388" message="#[vars.fileName] successfully inserted into the neon db system "/>
+				
+</when>
+				<otherwise>
+					<ee:transform doc:name="appending SentNotification 'N'" doc:id="4ee024f9-ebab-435e-baac-3a6db9d26b59">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    student: payload.student ++ { SentNotification: "N" },
+    validationStatus: payload.validationStatus
+}
+]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<set-variable value="#[payload]" doc:name="Setitng data Variable" doc:id="9ea2e4ef-c133-414b-ba81-b96e45761f35" variableName="data" />
+					<logger level="INFO" doc:name="file status" doc:id="784af988-8ad5-4446-949c-88fe5cbc783e" message=" processing #[vars.fileName] to neon-db system" />
+					<flow-ref doc:name="mule-mailing-student-async-neon-insert-impl-sub-flow" doc:id="0dc73b2f-ac0e-4056-a8be-f49fefa2bfe4" name="mule-mailing-student-async-neon-insert-impl-sub-flow" />
+					<logger level="INFO" doc:name="file status" doc:id="df36f6c0-d9cb-46d7-b44e-ee46fb66daca" message="#[vars.fileName] sucessfully inserted into the neon db "/>
+				
+</otherwise>
+			</choice>
+		</foreach>
+		<logger level="INFO" doc:name="End" doc:id="82e8b12e-2893-4c04-af63-fed30ca74e34" message='flow "mule-mailing-student-data-p-api-impl-sub-flow" ended'/>
+	</sub-flow>
+	<sub-flow name="mule-mailing-student-async-email-impl-sub-flow" doc:id="05f357cc-7972-495f-8821-f643206cb69d" >
+		<ee:transform doc:name="request payload" doc:id="f64c0f1d-c42a-40e1-a299-9e9b920355d7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var s = vars.data.student
+---
+{
+  emailId: s.EmailId,
+  subject: s.StudentName ++ "_" ++ s.RollNo ++ "_Semester Results",
+  body: vars.emailBody
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request to email system" doc:id="13f4cfd7-1f14-4caf-9c51-b61a8da2a3e3" config-ref="HTTP_Request_configuration_cloud_email" responseTimeout="${request.response}" path="${request1.path1}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	client_secret : "D77004Fc13e2417291bA93e913fe96D5",
+	client_id : "63d4eca79326491d93271c4dd6c89c76"
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="response payload" doc:id="8df3eee8-1ab7-43da-905a-997d73f94173" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    status: "success",
+    message: "Email notification sent successfully.",
+    recipient: vars.data.student.EmailId
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="mule-mailing-student-async-neon-insert-impl-sub-flow" doc:id="f975437f-7712-4c94-aec9-1b5ebbd7ce32" >
+		<ee:transform doc:name="request payload" doc:id="7799a640-f61c-4b91-9d8e-2ace89c403bd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    RollNo: vars.data.student.RollNo,
+    StudentName: vars.data.student.StudentName,
+    EmailId: vars.data.student.EmailId,
+    University: vars.data.student.University,
+    College: vars.data.student.College,
+    BatchCode: vars.data.student.BatchCode,
+    Branch: vars.data.student.Branch,
+    Semester: vars.data.student.Semester,
+    Grade: vars.data.student.Grade,
+    FinalResult: vars.data.student.FinalResult,
+    SentNotification: vars.data.student.SentNotification
+}
+
+]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="content" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"query":"INSERT INTO student_results(RollNo, StudentName, EmailId, University, College, BatchCode, Branch, Semester, Grade, FinalResult, SentNotification)VALUES (:RollNo, :StudentName, :EmailId, :University, :College, :BatchCode, :Branch, :Semester, :Grade, :FinalResult, :SentNotification);"
+}
+]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request to db-neon" doc:id="32b0f391-d5e8-4dfa-b3f0-7ff3b057e6c8" config-ref="HTTP_Request_configuration-neon-cloud" path="${request1.path2}" outputMimeType="application/json" responseTimeout="${request.response}" >
+			<http:body ><![CDATA[#[vars.content]]]></http:body>
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	client_secret : "D77004Fc13e2417291bA93e913fe96D5",
+	client_id : "63d4eca79326491d93271c4dd6c89c76"
+}]]]></http:headers>
+			<http:query-params ><![CDATA[#[payload]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="response payload" doc:id="77159341-2092-4966-a92f-1f166cf22c21" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    message: "Student record inserted successfully with below details:",
+    studentDetails: {
+        RollNo: vars.content.RollNo,
+        StudentName: vars.content.StudentName
+    }
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

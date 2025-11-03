@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="mule-mailing-student-async-impl-test-suite.xml" />
+	<munit:test name="mule-mailing-student-async-impl-test-suite-mule-mailing-studentdata-p-api-impl-flowTest" doc:id="981894c7-eed7-48a3-85b8-90542dc15338" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="277ce382-047c-4493-89f2-b3a91dba4e8b" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Request to email system" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="13f4cfd7-1f14-4caf-9c51-b61a8da2a3e3" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="d6d02fe7-9904-4ad5-b9c5-e2fd2fa1b794" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Request to db-neon" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="32b0f391-d5e8-4dfa-b3f0-7ff3b057e6c8" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="8b156f17-3791-4ebe-95c3-dc83a3be262c" processor="sftp:move">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Move to archive" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="f4440b20-9ef9-47c2-b0f6-3dcf848f5a1d" attributeName="doc:id" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="b9d4c737-a04c-4c77-911a-08627dcbce1d" >
+				<munit:payload value='#[{&#10;  "Sheet1": [&#10;    {&#10;      "RollNo": "21ECE1020",&#10;      "StudentName": "John Doe",&#10;      "EmailId": "pujitha.dhoragolla@prowesssoft.com",&#10;      "University": "XYZ University",&#10;      "College": "Sunrise Engineering",&#10;      "BatchCode": "2021CSE-A",&#10;      "Branch": "ECE",&#10;      "Semester": "3-1",&#10;      "Grade": "A",&#10;      "FinalResult": "Pass"&#10;    },&#10;    {&#10;      "RollNo": "21ECE1021",&#10;      "StudentName": "Priya Sen",&#10;      "EmailId": "pujitha.dhoragolla@prowesssoft.com",&#10;      "University": "LMN University",&#10;      "College": "First Engg College",&#10;      "BatchCode": "2021EEE-B",&#10;      "Branch": "AIML",&#10;      "Semester": "2-2",&#10;      "Grade": "B",&#10;      "FinalResult": "Pass"&#10;    },&#10;    {&#10;      "RollNo": "21ECE1022",&#10;      "StudentName": "Ahmed Khan",&#10;      "EmailId": "pujitha.dhoragolla@prowesssoft.com",&#10;      "University": "PQR University",&#10;      "College": "Alpha College of Engg",&#10;      "BatchCode": "2021IT-C",&#10;      "Branch": "ECE",&#10;      "Semester": "1-2",&#10;      "Grade": "C",&#10;      "FinalResult": "Pass"&#10;    },&#10;    {&#10;      "RollNo": "21ECE1023",&#10;      "StudentName": "Sarah Lee",&#10;      "EmailId": "pujitha.dhoragolla@prowesssoft.com",&#10;      "University": "SST University",&#10;      "College": "Starlight College",&#10;      "BatchCode": "2021ECE-D",&#10;      "Branch": "ECE",&#10;      "Semester": "4-1",&#10;      "Grade": "F",&#10;      "FinalResult": "Fail"&#10;    },&#10;    {&#10;      "RollNo": "21ECE1024",&#10;      "StudentName": "Kiran Rao",&#10;      "EmailId": "pujitha.dhoragolla@prowesssoft.com",&#10;      "University": "XYZ University",&#10;      "College": "Sunrise Engineering",&#10;      "BatchCode": "2021EIE-E",&#10;      "Branch": "ECE",&#10;      "Semester": "3-2",&#10;      "Grade": "E",&#10;      "FinalResult": "Fail"&#10;    }&#10;  ]&#10;}]' />
+				<munit:attributes value='#[{&#10;                        path: "student-data/sample_student_grades_1.xlsx"&#10;                    }]' />
+			</munit:set-event>
+			<flow-ref doc:name="Flow-ref to mule-mailing-studentdata-p-api-impl-flow" doc:id="afe9cd73-340f-4d86-b091-cf3bcb4c9fe0" name="mule-mailing-studentdata-p-api-impl-flow"/>
+		</munit:execution>
+	</munit:test>
+
+
+</mule>

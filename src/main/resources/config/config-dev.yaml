@@ -1,0 +1,104 @@
+# API specification
+#Autodiscovery
+api:
+  #Replace with respective autodiscovery id 
+  autodiscoveryID: "20582180"
+  
+# Listener configuration
+https:
+  host: "0.0.0.0"
+  port: "8081"
+  
+valid:
+  branches: ["CSE", "EEE", "IT", "ECE", "EIE"]
+  semesters: ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"]
+  grades: ["A", "B", "C", "D", "E"]
+  results: ["Pass", "Fail"]
+  
+gradeResultMapping:
+    passGrades: ["A", "B", "C"]
+    failGrades: ["D", "E"]
+
+file:
+  path: "/student-data"
+  cron: "0 0/30 * * * ?"
+  
+request:
+  host: "localhost"
+  portn: "8083"
+  porte: "8082"
+  base: "/api"
+  path1: "/send-notification"
+  path2: "/upload-student-file"
+  response: "1000000"
+  
+request1:
+  protocol: "HTTPS"
+  hoste: "mule-email-notification-s-app-v1-a0f0pl.5sc6y6-3.usa-e2.cloudhub.io"
+  hostn: "mule-neon-s-api-v1-a0f0pl.5sc6y6-1.usa-e2.cloudhub.io"
+  port: "443"
+  basepath: "/api"
+  path1: "/send-notification"
+  path2: "/upload-student-file"
+  response: "1000000"
+ 
+
+
+
+  
+
+sftp:
+  host: "ap-southeast-1.sftpcloud.io"
+  port: "22"
+  username: "71ff372b0a934ce392bf0a899975348c"
+
+  
+#API Configurations
+orders-prc-api:   
+  http-listener:
+    path: "/api/*"
+  http-client:
+      client-id:  "Client Id overridden at deploy time"  
+      client-secret: "Client secret overridden at deploy time"   
+
+#AMQ Configurations
+anypoint-mq:
+    server-url: ""
+    slsorders-queue-name: ""
+    slsorders-dl-queue-name: ""
+    fetchSize: "10"
+    frequency: "10000"
+    ackTimeout: "10000"
+    client-id:  "Client Id overridden at deploy time" 
+    client-secret: "Client secret overridden at deploy time"
+
+#Branches:
+branch.name: "'CSE','EEE','IT','ECE','EIE'"
+
+# Retry configuration
+retry:
+   http: 
+    delayMillisecs: "3000"
+    numRetries: "3"
+   amq:
+    delayMillisecs: "3000"
+    numRetries: "3"
+    
+# Reconnect configuration
+reconnection:
+   amq:
+    frequency: "2000"
+    attempts: "2"
+   http: 
+    delayMillisecs: "3000"
+    numRetries: "3"
+    
+  
+# Object Store configuration for Object Store: orders_lastupdated_store
+order-lastupdated:
+  entryTtl: "24"
+  entryTtlUnit: "HOURS"
+  maxEntries: "10"
+  persistent: "true"
+  expirationInterval: "30"
+  expirationIntervalUnit: "MINUTES"  
